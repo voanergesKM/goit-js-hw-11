@@ -1,9 +1,7 @@
 import PixabayAPI from './js/pixabay-api';
-import makeMarkupEl from './js/markup';
-import Notiflix from 'notiflix';
-import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import makeMarkupEl from './js/markup';
 
 const pixabay = new PixabayAPI();
 
@@ -37,27 +35,31 @@ async function onSearchSubmit(evt) {
 }
 
 async function onMoreBtnClick() {
-  refs.loadMoreBtn.setAttribute('disabled', '');
+  refs.loadMoreBtn.classList.add('is-hidden');
 
   await fetchImages();
-
-  await refs.loadMoreBtn.removeAttribute('disabled');
-
   await smoothScroll();
+}
+
+async function fetchImages() {
+  try {
+    const dataFetch = await pixabay.fetchImages();
+    await markup(dataFetch);
+  } catch (error) {
+    console.log(error);
+  }
+
+  await lightbox.refresh();
 }
 
 function markup(data) {
   if (!data) {
-    refs.loadMoreBtn.classList.add('visually-hidden');
+    hideLoadMoreBtn();
     return;
   } else {
-    try {
-      const markup = data.hits.map(makeMarkupEl).join('');
-      refs.galleryEl.insertAdjacentHTML('beforeend', markup);
-      refs.loadMoreBtn.classList.remove('visually-hidden');
-    } catch (error) {
-      console.log(error);
-    }
+    const markup = data.hits.map(makeMarkupEl).join('');
+    refs.galleryEl.insertAdjacentHTML('beforeend', markup);
+    showLoadMoreBtn();
   }
 }
 
@@ -72,8 +74,11 @@ function smoothScroll() {
   });
 }
 
-async function fetchImages() {
-  const dataFetch = await pixabay.fetchImages();
-  await markup(dataFetch);
-  await lightbox.refresh();
+function hideLoadMoreBtn() {
+  refs.loadMoreBtn.classList.add('visually-hidden');
+}
+
+function showLoadMoreBtn() {
+  refs.loadMoreBtn.classList.remove('visually-hidden');
+  refs.loadMoreBtn.classList.remove('is-hidden');
 }

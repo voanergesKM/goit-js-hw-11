@@ -30,7 +30,6 @@ export default class PixabayAPI {
         return;
       }
 
-      console.log(response.data);
       this.page += 1;
 
       Notify.success(`Hooray! We found ${response.data.totalHits} images.`);
