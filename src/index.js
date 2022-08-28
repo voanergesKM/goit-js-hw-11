@@ -1,6 +1,8 @@
-import PixabayAPI from './js/pixabay-api';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import Notiflix from 'notiflix';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import PixabayAPI from './js/pixabay-api';
 import makeMarkupEl from './js/markup';
 
 const pixabay = new PixabayAPI();
@@ -10,10 +12,11 @@ const lightbox = new SimpleLightbox('.gallery a', {
   captionDelay: 250,
 });
 
-const refs = {
+export const refs = {
   formEl: document.querySelector('.search-form'),
   galleryEl: document.querySelector('.gallery'),
   loadMoreBtn: document.querySelector('.more__btn'),
+  searchBtn: document.querySelector('button[type="submit"]'),
 };
 
 refs.formEl.addEventListener('submit', onSearchSubmit);
@@ -27,7 +30,11 @@ async function onSearchSubmit(evt) {
 
   pixabay.query = evt.currentTarget.elements.searchQuery.value;
 
+  refs.loadMoreBtn.classList.add('is-hidden');
+  refs.searchBtn.classList.add('is-hidden');
+
   await fetchImages();
+  await refs.searchBtn.classList.remove('is-hidden');
 
   if (evt.currentTarget) {
     evt.currentTarget.reset();
@@ -44,7 +51,7 @@ async function onMoreBtnClick() {
 async function fetchImages() {
   try {
     const dataFetch = await pixabay.fetchImages();
-    await markup(dataFetch);
+    await makeMarkup(dataFetch);
   } catch (error) {
     console.log(error);
   }
@@ -52,14 +59,17 @@ async function fetchImages() {
   await lightbox.refresh();
 }
 
-function markup(data) {
+function makeMarkup(data) {
   if (!data) {
     hideLoadMoreBtn();
     return;
+  } else if (data.hits.length < 40) {
+    markup(data);
+    Notify.info(`We're sorry, but you've reached the end of search results.`);
   } else {
-    const markup = data.hits.map(makeMarkupEl).join('');
-    refs.galleryEl.insertAdjacentHTML('beforeend', markup);
+    markup(data);
     showLoadMoreBtn();
+    console.dir(data);
   }
 }
 
@@ -81,4 +91,9 @@ function hideLoadMoreBtn() {
 function showLoadMoreBtn() {
   refs.loadMoreBtn.classList.remove('visually-hidden');
   refs.loadMoreBtn.classList.remove('is-hidden');
+}
+
+function markup(data) {
+  const markup = data.hits.map(makeMarkupEl).join('');
+  refs.galleryEl.insertAdjacentHTML('beforeend', markup);
 }

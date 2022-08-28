@@ -30,9 +30,11 @@ export default class PixabayAPI {
         return;
       }
 
-      this.page += 1;
+      if (this.page === 1) {
+        Notify.success(`Hooray! We found ${response.data.totalHits} images.`);
+      }
 
-      Notify.success(`Hooray! We found ${response.data.totalHits} images.`);
+      this.page += 1;
 
       return response.data;
     } catch (error) {
